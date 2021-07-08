@@ -189,20 +189,21 @@ export function deactivate() {}
 export class EditorListener {
   private _disposable: vscode.Disposable;
   private _subscriptions: vscode.Disposable[] = [];
-  private _sounds?: OverwatchPlayFunctions;
+  private _audioBuffers?: OverwatchAudioBuffers;
 
   constructor(private player: any) {
     isNotArrowKey = false;
 
-    load(audioPaths).then((buffers: OverwatchAudioBuffers) => {
-      this._sounds = Object.entries(buffers).reduce(
-        (prev, [key, buffer]) => ({
-          ...prev,
-          [key]: play(buffer),
-        }),
-        {}
-      ) as OverwatchPlayFunctions;
-    });
+    load(audioPaths).then((buffers: OverwatchAudioBuffers) => this._audioBuffers = buffers);
+    // load(audioPaths).then((buffers: OverwatchAudioBuffers) => {
+    //   this._sounds = Object.entries(buffers).reduce(
+    //     (prev, [key, buffer]) => ({
+    //       ...prev,
+    //       [key]: play(buffer),
+    //     }),
+    //     {}
+    //   ) as OverwatchPlayFunctions;
+    // });
 
     vscode.workspace.onDidChangeTextDocument(
       this._keystrokeCallback,
@@ -218,7 +219,7 @@ export class EditorListener {
   }
 
   _keystrokeCallback = (event: vscode.TextDocumentChangeEvent) => {
-    if (!isActive || !this._sounds) {
+    if (!isActive || !this._audioBuffers) {
       return;
     }
 
@@ -248,19 +249,19 @@ export class EditorListener {
 
       case " ":
         // space bar pressed
-        this._sounds.headshot.play();
+        play(this._audioBuffers.headshot);
         break;
 
       case "\n":
         // enter pressed
-        this._sounds.elimination.play();
+        play(this._audioBuffers.elimination);
         break;
 
       case "\t":
       case "  ":
       case "    ":
         // tab pressed
-        this._sounds.hitmarker.play();
+        play(this._audioBuffers.hitmarker);
         break;
 
       default:
@@ -269,19 +270,17 @@ export class EditorListener {
         switch (textLength) {
           case 0:
             // user hit Enter while indented
-            //this.player.play(this._enterAudio);
+            play(this._audioBuffers.elimination);
             break;
 
           case 1:
-            headshot.then(play);
-
             // it's a regular character
-            this._sounds.hitmarker.play();
+            play(this._audioBuffers.hitmarker);
             break;
 
           default:
             // text pasted
-            this._sounds.hitmarker.play();
+            play(this._audioBuffers.hitmarker);
             break;
         }
         break;
@@ -293,7 +292,7 @@ export class EditorListener {
 
   _arrowKeysCallback = debounce(
     (event: vscode.TextEditorSelectionChangeEvent) => {
-      if (!isActive || !this._sounds) {
+      if (!isActive || !this._audioBuffers) {
         return;
       }
 
@@ -305,7 +304,7 @@ export class EditorListener {
 
       // check if there is no selection
       if (editor.selection.isEmpty && isNotArrowKey === false) {
-        this._sounds.hitmarker.play();
+        play(this._audioBuffers.hitmarker);
       } else {
         isNotArrowKey = false;
       }
