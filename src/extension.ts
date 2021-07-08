@@ -5,6 +5,14 @@ import * as path from "path";
 import * as vscode from "vscode";
 import player, { PlayerConfig } from "./player";
 import debounce = require("lodash.debounce");
+//@ts-ignore
+import load = require("audio-loader");
+import badPlay = require("audio-play");
+import {
+  audioPaths,
+  OverwatchAudioBuffers,
+  OverwatchPlayFunctions,
+} from "./audioPaths";
 
 let listener: EditorListener;
 let isActive: boolean;
@@ -15,6 +23,10 @@ let config: PlayerConfig = {
   linuxVol: 100,
 };
 
+function play(buffer: AudioBuffer) {
+  return badPlay(buffer, {}, () => {});
+}
+const headshot = load('/git/overwatch-sounds/sounds/hitmarker.wav');
 export function activate(context: vscode.ExtensionContext) {
   console.log('Initializing "overwatch-sounds" extension');
 
@@ -177,44 +189,20 @@ export function deactivate() {}
 export class EditorListener {
   private _disposable: vscode.Disposable;
   private _subscriptions: vscode.Disposable[] = [];
-  private _basePath: string = path.join(__dirname, "..");
-
-  // Audio files
-  private _spaceAudio: string = path.join(
-    this._basePath,
-    "sounds",
-    "headshot.wav"
-  );
-  private _deleteAudio: string = path.join(
-    this._basePath,
-    "sounds",
-    "hitmarker.wav"
-  );
-  private _otherKeysAudio: string = path.join(
-    this._basePath,
-    "sounds",
-    "hitmarker.wav"
-  );
-  private _cutAudio: string = path.join(this._basePath, "sounds", "cut.wav");
-  private _pasteAudio: string = path.join(
-    this._basePath,
-    "sounds",
-    "elimination.wav"
-  );
-  private _enterAudio: string = path.join(
-    this._basePath,
-    "sounds",
-    "elimination.wav"
-  );
-  private _tabAudio: string = path.join(this._basePath, "sounds", "tab.wav");
-  private _arrowsAudio: string = path.join(
-    this._basePath,
-    "sounds",
-    "hitmarker.wav"
-  );
+  private _sounds?: OverwatchPlayFunctions;
 
   constructor(private player: any) {
     isNotArrowKey = false;
+
+    load(audioPaths).then((buffers: OverwatchAudioBuffers) => {
+      this._sounds = Object.entries(buffers).reduce(
+        (prev, [key, buffer]) => ({
+          ...prev,
+          [key]: play(buffer),
+        }),
+        {}
+      ) as OverwatchPlayFunctions;
+    });
 
     vscode.workspace.onDidChangeTextDocument(
       this._keystrokeCallback,
@@ -227,14 +215,10 @@ export class EditorListener {
       this._subscriptions
     );
     this._disposable = vscode.Disposable.from(...this._subscriptions);
-    this.player = {
-      play: (filePath: string) => player.play(filePath, config),
-    };
   }
 
   _keystrokeCallback = (event: vscode.TextDocumentChangeEvent) => {
-    //debounce(
-    if (!isActive) {
+    if (!isActive || !this._sounds) {
       return;
     }
 
@@ -251,31 +235,32 @@ export class EditorListener {
     let pressedKey = event.contentChanges[0].text;
 
     switch (pressedKey) {
-      case "":
-        if (event.contentChanges[0].rangeLength === 1) {
-          // backspace or delete pressed
-          this.player.play(this._deleteAudio);
-        } else {
-          // text cut
-          this.player.play(this._cutAudio);
-        }
-        break;
+      // case "":
+      //   if (event.contentChanges[0].rangeLength === 1) {
+      //     // backspace or delete pressed
+      //     play(this._audioBuffers.hitmarker)
+      //     this.player.play(this._deleteAudio);
+      //   } else {
+      //     // text cut
+      //     this.player.play(this._cutAudio);
+      //   }
+      //   break;
 
       case " ":
         // space bar pressed
-        this.player.play(this._spaceAudio);
+        this._sounds.headshot.play();
         break;
 
       case "\n":
         // enter pressed
-        this.player.play(this._enterAudio);
+        this._sounds.elimination.play();
         break;
 
       case "\t":
       case "  ":
       case "    ":
         // tab pressed
-        this.player.play(this._tabAudio);
+        this._sounds.hitmarker.play();
         break;
 
       default:
@@ -284,17 +269,19 @@ export class EditorListener {
         switch (textLength) {
           case 0:
             // user hit Enter while indented
-            this.player.play(this._enterAudio);
+            //this.player.play(this._enterAudio);
             break;
 
           case 1:
+            headshot.then(play);
+
             // it's a regular character
-            this.player.play(this._otherKeysAudio);
+            this._sounds.hitmarker.play();
             break;
 
           default:
             // text pasted
-            this.player.play(this._pasteAudio);
+            this._sounds.hitmarker.play();
             break;
         }
         break;
@@ -306,7 +293,7 @@ export class EditorListener {
 
   _arrowKeysCallback = debounce(
     (event: vscode.TextEditorSelectionChangeEvent) => {
-      if (!isActive) {
+      if (!isActive || !this._sounds) {
         return;
       }
 
@@ -318,7 +305,7 @@ export class EditorListener {
 
       // check if there is no selection
       if (editor.selection.isEmpty && isNotArrowKey === false) {
-        this.player.play(this._arrowsAudio);
+        this._sounds.hitmarker.play();
       } else {
         isNotArrowKey = false;
       }
