@@ -16,23 +16,19 @@
   "contributes": {
     "commands": [
       {
-        "command": "overwatch-sounds.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "overwatch-sounds.enable",
+        "command": "overwatch_sounds.enable",
         "title": "Overwatch Sounds: Enable"
       },
       {
-        "command": "overwatch-sounds.disable",
+        "command": "overwatch_sounds.disable",
         "title": "Overwatch Sounds: Disable"
       },
       {
-        "command": "overwatch-sounds.volumeUp",
+        "command": "overwatch_sounds.volumeUp",
         "title": "Overwatch Sounds: Volume Up"
       },
       {
-        "command": "overwatch-sounds.volumeDown",
+        "command": "overwatch_sounds.volumeDown",
         "title": "Overwatch Sounds: Volume Down"
       }
     ]
