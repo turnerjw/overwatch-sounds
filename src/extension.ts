@@ -232,78 +232,77 @@ export class EditorListener {
     };
   }
 
-  _keystrokeCallback = debounce(
-    (event: vscode.TextDocumentChangeEvent) => {
-      if (!isActive) {
-        return;
-      }
+  _keystrokeCallback = (event: vscode.TextDocumentChangeEvent) => {
+    //debounce(
+    if (!isActive) {
+      return;
+    }
 
-      let activeDocument =
-        vscode.window.activeTextEditor &&
-        vscode.window.activeTextEditor.document;
-      if (
-        event.document !== activeDocument ||
-        event.contentChanges.length === 0
-      ) {
-        return;
-      }
+    let activeDocument =
+      vscode.window.activeTextEditor && vscode.window.activeTextEditor.document;
+    if (
+      event.document !== activeDocument ||
+      event.contentChanges.length === 0
+    ) {
+      return;
+    }
 
-      isNotArrowKey = true;
-      let pressedKey = event.contentChanges[0].text;
+    isNotArrowKey = true;
+    let pressedKey = event.contentChanges[0].text;
 
-      switch (pressedKey) {
-        case "":
-          if (event.contentChanges[0].rangeLength === 1) {
-            // backspace or delete pressed
-            this.player.play(this._deleteAudio);
-          } else {
-            // text cut
-            this.player.play(this._cutAudio);
-          }
-          break;
+    switch (pressedKey) {
+      case "":
+        if (event.contentChanges[0].rangeLength === 1) {
+          // backspace or delete pressed
+          this.player.play(this._deleteAudio);
+        } else {
+          // text cut
+          this.player.play(this._cutAudio);
+        }
+        break;
 
-        case " ":
-          // space bar pressed
-          this.player.play(this._spaceAudio);
-          break;
+      case " ":
+        // space bar pressed
+        this.player.play(this._spaceAudio);
+        break;
 
-        case "\n":
-          // enter pressed
-          this.player.play(this._enterAudio);
-          break;
+      case "\n":
+        // enter pressed
+        this.player.play(this._enterAudio);
+        break;
 
-        case "\t":
-        case "  ":
-        case "    ":
-          // tab pressed
-          this.player.play(this._tabAudio);
-          break;
+      case "\t":
+      case "  ":
+      case "    ":
+        // tab pressed
+        this.player.play(this._tabAudio);
+        break;
 
-        default:
-          let textLength = pressedKey.trim().length;
+      default:
+        let textLength = pressedKey.trim().length;
 
-          switch (textLength) {
-            case 0:
-              // user hit Enter while indented
-              this.player.play(this._enterAudio);
-              break;
+        switch (textLength) {
+          case 0:
+            // user hit Enter while indented
+            this.player.play(this._enterAudio);
+            break;
 
-            case 1:
-              // it's a regular character
-              this.player.play(this._otherKeysAudio);
-              break;
+          case 1:
+            // it's a regular character
+            this.player.play(this._otherKeysAudio);
+            break;
 
-            default:
-              // text pasted
-              this.player.play(this._pasteAudio);
-              break;
-          }
-          break;
-      }
-    },
-    100,
-    { leading: true }
-  );
+          default:
+            // text pasted
+            this.player.play(this._pasteAudio);
+            break;
+        }
+        break;
+    }
+  };
+  //     100,
+  //     { leading: true }
+  //   );
 
   _arrowKeysCallback = debounce(
     (event: vscode.TextEditorSelectionChangeEvent) => {
